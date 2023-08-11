@@ -3,7 +3,7 @@
   This is code is for BMP280 humidity, temperature & pressure sensor
   
 */
-
+#include <cmath>
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_BMP280.h>
@@ -14,8 +14,12 @@
 #define SCREEN_HEIGHT 32    // OLED display height, in pixels
 #define OLED_RESET     -1   // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C //< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#define x_si 0
+#define y_row_1 0
+#define y_row_2 11
+#define y_row_3 22
 
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // 'logo_125ade_lab', 128x32px
 const unsigned char epd_bitmap_logo_125ade_lab [] PROGMEM = {
@@ -60,7 +64,8 @@ Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
 Adafruit_Sensor *bmp_pressure = bmp.getPressureSensor();
 
 const float seaLevelPressure = 1019.66; // Sea level pressure in hPa
-
+int x_cursor_alt, x_cursor_tem, x_cursor_pre, A_check, T_check, P_check;
+float A, T, P;
 
 void setup() {
   // serial setup
@@ -114,37 +119,63 @@ void loop() {
     bmp_pressure->getEvent(&pressure_event);
 
     display.clearDisplay();
-    float T = temp_event.temperature; // Temperature in Celsius
-    float P = pressure_event.pressure; // Pressure in hPa
-
-    // Calculate altitude using the metric system
-    float A = 44330.0 * (1.0 - pow((P / seaLevelPressure), 0.1903));
-
-    display.setCursor(0,0);                       
-    display.setTextColor(WHITE);
-    display.setTextSize(2); 
-    display.print("Temp");
+    T = temp_event.temperature; // Temperature in Celsius
+    P = pressure_event.pressure; // Pressure in hPa
+    A = 44330.0 * (1.0 - pow((P / seaLevelPressure), 0.1903));
     
-    display.setCursor(0,18);
-    display.print(T, 1); 
-    display.setCursor(50,17);
-    display.setTextSize(1);
-    display.print("C"); // Celsius symbol
+    x_cursor_alt = 47;
+    A_check = static_cast<int>(floor(A));
+    if (A_check > 10){
+      x_cursor_alt = x_cursor_alt - 6;
+    }
+    if (A_check > 100){
+      x_cursor_alt = x_cursor_alt - 6;
+    }
+    if (A_check > 1000){
+      x_cursor_alt = x_cursor_alt - 6;
+    }
 
+    x_cursor_pre = 47;
+    P_check = static_cast<int>(floor(P));
+    if (P_check > 10){
+      x_cursor_pre = x_cursor_pre - 6;
+    }
+    if (P_check > 100){
+      x_cursor_pre = x_cursor_pre - 6;
+    }
+    if (P_check > 1000){
+      x_cursor_pre = x_cursor_pre - 6;
+    }
+
+    x_cursor_tem = 47;
+    T_check = static_cast<int>(floor(T));
+    if (T_check > 10){
+      x_cursor_tem = x_cursor_tem - 6;
+    }
+    if (T_check > 100){
+      x_cursor_tem = x_cursor_tem - 6;
+    }
+    if (T_check > 1000){
+      x_cursor_tem = x_cursor_tem - 6;
+    }
+
+    display.setTextColor(WHITE);
     display.setTextSize(1);
-    display.setCursor(65,0);
-    display.print("Pres");
-    display.setCursor(65,10);
-    display.print(P, 2); // Display pressure with two decimal places
-    display.setCursor(100,10);
+
+    display.setCursor(x_si,y_row_1);
+    display.print("M");
+    display.setCursor(x_cursor_alt,y_row_1);
+    display.print(A, 0);
+       
+    display.setCursor(x_si,y_row_2);
     display.print("hPa");
+    display.setCursor(x_cursor_pre,y_row_2);
+    display.print(P, 2); 
 
-    display.setCursor(65,25);
-    display.print("Alt");
-    display.setCursor(90,25);
-    display.print(A, 0); // Display altitude with one decimal place
-    display.setCursor(110,25);
-    display.print("M"); // Meters symbol
+    display.setCursor(x_si,y_row_3);
+    display.print("C");
+    display.setCursor(x_cursor_tem,y_row_3);
+    display.print(T, 1); 
     
     display.display();
     delay(1000);  
