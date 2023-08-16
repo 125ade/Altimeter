@@ -9,6 +9,8 @@
 #include <Adafruit_BMP280.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <ESP8266WiFi.h>
+#include "secret.h"
 
 #define SCREEN_WIDTH 128    // OLED display width, in pixels
 #define SCREEN_HEIGHT 32    // OLED display height, in pixels
@@ -57,7 +59,9 @@ const unsigned char epd_bitmap_logo_125ade_lab [] PROGMEM = {
 	0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xfd, 0xff, 0xff, 0xff, 0xff, 0xff
 };
 
+WiFiServer server(80);
 
+String html;
 
 Adafruit_BMP280 bmp; // use I2C interface
 Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
@@ -82,8 +86,27 @@ void setup() {
   display.display();
   display.drawBitmap(0,0, epd_bitmap_logo_125ade_lab, 128, 32, WHITE);
   display.display();
+  delay(3000);
+
+
+  // Create access point
+  WiFi.softAP(ssid, password);
+  IPAddress myIP = WiFi.softAPIP();
+  // display print ip
+  display.clearDisplay();
+  display.display();
+  display.setTextColor(WHITE);
+  display.setCursor(0,16);
+  display.setTextSize(1);
+  display.print("IP: ");
+  display.setCursor(30,16);
+  display.print(myIP);
+  display.display();
+  // serial print ip
+  Serial.print("IP: ");
+  Serial.println(myIP);
+  server.begin();
   delay(4000);
-  
 
   
   // setup bmp280
@@ -122,6 +145,31 @@ void loop() {
     T = temp_event.temperature; // Temperature in Celsius
     P = pressure_event.pressure; // Pressure in hPa
     A = 44330.0 * (1.0 - pow((P / seaLevelPressure), 0.1903));
+
+    WiFiClient client = server.available();
+    if (client) {
+      html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                "<style>body{font-family: Arial, sans-serif;margin:0;padding:2%;background-color:#f4f4f4;}"
+                ".container{max-width:600px;margin:auto;padding:20px;background-color:#fff;"
+                "border-radius:10px;box-shadow:0px 0px 10px rgba(0,0,0,0.2);}h1{text-align:center;"
+                "margin-bottom:20px;}p{margin:10px 0;}</style></head><body><div class='container'>"
+                "<h1>Altimeter 125ade</h1><p><strong>Height:</strong> <span id='height'>" + String(int(floor(A))) + "</span> M</p>"
+                "<p><strong>Pressure:</strong> <span id='pressure'>" + String(int(P * 100) / 100.0) + "</span> hPa</p>"
+                "<p><strong>Temperature:</strong> <span id='temperature'>" + String(int(T * 10) / 10.0) + "</span> C</p>"
+                "</div><script>document.getElementById('height').textContent = " + String(int(floor(A))) + ";"
+                "document.getElementById('pressure').textContent = " + String(int(P * 100) / 100.0) + ";"
+                "document.getElementById('temperature').textContent = " + String(int(T * 10) / 10.0) + ";</script></body></html>";
+    
+      client.println("HTTP/1.1 200 OK");
+      client.println("Content-Type: text/html");
+      client.println("Connection: close");
+      client.println();
+      client.println(html);
+    
+      delay(100); // Give some time to send the response
+      client.stop();
+      Serial.println("Client disconnected");
+    }
     
     x_cursor_alt = 47;
     A_check = static_cast<int>(floor(A));
