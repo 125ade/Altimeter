@@ -93,10 +93,9 @@ Once switched on, the start screen with the "125ade lab" logo will first appear,
 
 To turn off the device, you need to unplug the power cord or turn off the battery pack switch.
 
-<img height="auto" src="photo\final_3D_v1.jpeg" width="200"/>
-<img height="auto" src="photo\final_3D_v1_on1.jpeg" width="200"/>
-<img height="auto" src="photo\final_3D_v1_on2.jpeg" width="200"/>
-<img height="auto" src="photo\final_3D_v1_on3.jpeg" width="200"/>
+| OFF | ON setup phase | ON show IP | ON show data | ON show Web page |
+| ------- | ------- | ------- | ------- | ------- |
+| <img height="auto" src="photo\final_3D_v1.jpeg" width="200"/> | <img height="auto" src="photo\final_3D_v1_on1.jpeg" width="200"/> | <img height="auto" src="photo\final_3D_v1_on2.jpeg" width="200"/> | <img height="auto" src="photo\final_3D_v1_on3.jpeg" width="200"/> | <img height="auto" src="photo\web_page.jpeg" width="200"/> |
 
 
 ## Architecture
